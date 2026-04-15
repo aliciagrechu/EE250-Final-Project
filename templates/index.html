@@ -1,61 +1,342 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Spotify LED Controller</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SpotiPI</title>
+
     <style>
         body {
-            font-family: Arial;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
             text-align: center;
-            margin-top: 50px;
         }
 
-        input, select, button {
-            padding: 10px;
-            margin: 10px;
-            border-radius: 8px;
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
         }
 
-        .box {
-            margin-top: 20px;
+        h1 {
+            margin-bottom: 30px;
+            font-size: 40px;
+        }
+
+        .subtitle {
+            color: #b3b3b3;
+            margin-bottom: 20px;
+        }
+
+        form.search-form {
+            background-color: #181818;
             padding: 20px;
-            border: 1px solid gray;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .label-row {
+            margin-top: 8px;
+            color: #b3b3b3;
+            font-size: 14px;
+        }
+
+        input {
+            padding: 12px;
+            margin: 10px;
+            border-radius: 10px;
+            border: none;
+            width: 240px;
+            font-size: 14px;
+            background-color: #282828;
+            color: white;
+        }
+
+        input::placeholder {
+            color: #b3b3b3;
+        }
+
+        button {
+            padding: 12px 18px;
+            margin: 10px;
+            border-radius: 999px;
+            border: none;
+            background-color: #1DB954;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        button:hover {
+            background-color: #1ed760;
+            transform: scale(1.03);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .card {
+            background-color: #181818;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px auto;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .section-title {
+            margin-top: 35px;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .mood-text {
+            color: #1DB954;
+            font-weight: bold;
+        }
+
+        .led-preview {
+            width: 140px;
+            height: 70px;
+            border-radius: 14px;
+            margin: 15px auto 0 auto;
+            transition: background 0.25s ease, box-shadow 0.25s ease;
+            animation: ledPulse 2s infinite ease-in-out;
+        }
+
+        @keyframes ledPulse {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.04); }
+            100% { transform: scale(1); }
+        }
+
+        .result-form {
+            margin: 0;
+        }
+
+        .result-card {
+            background-color: #181818;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 16px auto;
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+            transition: transform 0.15s ease, background-color 0.15s ease, border 0.15s ease, box-shadow 0.15s ease;
+            border: 1px solid transparent;
+        }
+
+        .result-card:hover {
+            transform: scale(1.02);
+            background-color: #222222;
+        }
+
+        .result-card:active {
+            transform: scale(0.99);
+        }
+
+        .result-card.selected {
+            border: 1px solid #1DB954;
+            background-color: #1c2b22;
+            box-shadow: 0 0 0 1px #1DB954, 0 8px 24px rgba(29, 185, 84, 0.25);
+        }
+
+        .song-info {
+            text-align: left;
+            flex: 1;
+        }
+
+        .song-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .artist-name {
+            color: #b3b3b3;
+            font-size: 14px;
+        }
+
+        .album-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1DB954, #0f6b31);
+            flex-shrink: 0;
+        }
+        .album-art {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+
+        .empty-state {
+            color: #b3b3b3;
+            margin-top: 20px;
+        }
+
+        footer {
+            margin-top: 60px;
+            padding: 20px;
+            color: #535353;
+            font-size: 13px;
+            border-top: 1px solid #282828;
+        }
+
+        .selected-badge {
             display: inline-block;
+            margin-top: 8px;
+            padding: 6px 10px;
+            border-radius: 999px;
+            background-color: #1DB954;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .result-button {
+            min-width: 90px;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Welcome to SpotiPI</h1>
+        <p class="subtitle"> SpotiPI syncs music with smart lighting using real-time Spotify data. </p>
+        <p class="subtitle"> Enter a song and artist to let the system classify its mood automatically. </p>
 
-    <h1>Spotify Mood Light</h1>
+        <form method="POST" class="search-form">
+            <input type="hidden" name="action" value="search">
 
-    <form method="POST">
-        <input type="text" name="query" placeholder="Enter a song" />
+            <div class="label-row">Song Name</div>
+            <input
+                type="text"
+                name="song"
+                placeholder="Enter song name"
+                value="{{ search_song }}"
+            />
 
-        <select name="mode">
-            <option value="mood">Mood</option>
-            <option value="party">Party</option>
-            <option value="chill">Chill</option>
-        </select>
+            <div class="label-row">Artist Name</div>
+            <input
+                type="text"
+                name="artist"
+                placeholder="Enter artist name"
+                value="{{ search_artist }}"
+            />
 
-        <br>
+            <br>
+            <button type="submit">Search</button>
+        </form>
 
-        <button type="submit">Search</button>
-    </form>
+        <div class="card">
+            <h2>Current Selection</h2>
+                <p><strong>Song:</strong> <span id="current-song">{{ selected_song if selected_song else "None yet" }}</span></p>
+                <p><strong>Artist:</strong> <span id="current-artist">{{ selected_artist if selected_artist else "None yet" }}</span></p>
 
-    <div class="box">
-        <h2>Current Selection</h2>
-        <p><b>Song:</b> {{ query }}</p>
-        <p><b>Mode:</b> {{ mode }}</p>
+                <p><strong>Mood:</strong>
+                    <span id="current-mood" class="mood-text">
+                        {{ mood if mood else "Waiting for classification" }}
+                    </span>
+                </p>
 
-         <!-- LED preview box -->
-        <div style="
-            width:120px;
-            height:60px;
-            border-radius:10px;
-            background:orange;
-            margin:auto;
-            margin-top:10px;
-        "></div>
+                <div id="led-box" class="led-preview"></div>
+        </div>
+
+        {% if results %}
+            <h2 class="section-title">Search Results</h2>
+
+            {% for song_result in results %}
+                <div id="card-{{ song_result.id }}" class="result-card">
+
+                    <!-- album image placeholder ready for real images -->
+                    {% if song_result.image %}
+                        <img src="{{ song_result.image }}" alt="Album Art" class="album-art">
+                    {% else %}
+                        <div class="album-placeholder"></div>
+                    {% endif %}
+
+                    <div class="song-info">
+                        <div class="song-title">{{ song_result.name }}</div>
+                        <div class="artist-name">{{ song_result.artist }}</div>
+                    </div>
+
+                <!-- Select Button in Song List -->
+                <button type="button"
+                    onclick="selectSong('{{ song_result.name }}', '{{ song_result.artist }}', '{{ song_result.id }}')">
+                    <span id="btn-{{ song_result.id }}">Select</span>
+                </button>
+
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="empty-state">No results yet. Search for a song to get started.</p>
+        {% endif %}
     </div>
+
+    <footer>
+        Built by Alicia Grechu & Emma Howard
+    </footer>
+
+    <!-- JavaScript for song list select button -->
+    <script>
+    function selectSong(name, artist, id) {
+        // Update current selection text
+        document.getElementById("current-song").innerText = name;
+        document.getElementById("current-artist").innerText = artist;
+
+        // Fake mood logic (frontend version for now)
+        let mood = "Chill";
+        let color = "#8b5cf6";
+
+        const lower = name.toLowerCase();
+
+        if (lower.includes("remix") || lower.includes("dance")) {
+            mood = "Energetic";
+            color = "#ff4fa3";
+        } else if (lower.includes("love") || lower.includes("happy")) {
+            mood = "Happy";
+            color = "#f59e0b";
+        } else if (lower.includes("night") || lower.includes("blue")) {
+            mood = "Moody";
+            color = "#3b82f6";
+        }
+
+        document.getElementById("current-mood").innerText = mood;
+
+        // Update LED color
+        const led = document.getElementById("led-box");
+        led.style.background = color;
+        led.style.boxShadow = `0 0 25px ${color}`;
+
+        // Remove previous selection highlight
+        document.querySelectorAll(".result-card").forEach(card => {
+            card.classList.remove("selected");
+        });
+
+        // Highlight selected card
+        document.getElementById("card-" + id).classList.add("selected");
+
+        // reset button text
+        document.querySelectorAll("[id^='btn-']").forEach(btn => {
+            btn.innerText = "Select";
+        });
+
+        // update clicked button
+        document.getElementById("btn-" + id).innerText = "Selected";
+    }
+    </script>
 
 </body>
 </html>
