@@ -1,61 +1,220 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Spotify LED Controller</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spotify Mood Light</title>
+
     <style>
         body {
-            font-family: Arial;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #121212;
+            color: white;
             text-align: center;
-            margin-top: 50px;
         }
 
-        input, select, button {
-            padding: 10px;
-            margin: 10px;
-            border-radius: 8px;
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px 20px;
         }
 
-        .box {
-            margin-top: 20px;
+        h1 {
+            margin-bottom: 10px;
+            font-size: 40px;
+        }
+
+        .subtitle {
+            color: #b3b3b3;
+            margin-bottom: 30px;
+        }
+
+        form {
+            background-color: #181818;
             padding: 20px;
-            border: 1px solid gray;
-            display: inline-block;
+            border-radius: 16px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .label-row {
+            margin-top: 8px;
+            color: #b3b3b3;
+            font-size: 14px;
+        }
+
+        input {
+            padding: 12px;
+            margin: 10px;
+            border-radius: 10px;
+            border: none;
+            width: 240px;
+            font-size: 14px;
+            background-color: #282828;
+            color: white;
+        }
+
+        input::placeholder {
+            color: #b3b3b3;
+        }
+
+        button {
+            padding: 12px 18px;
+            margin: 10px;
+            border-radius: 999px;
+            border: none;
+            background-color: #1DB954;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+
+        button:hover {
+            background-color: #1ed760;
+            transform: scale(1.03);
+        }
+
+        .card {
+            background-color: #181818;
+            border-radius: 16px;
+            padding: 20px;
+            margin: 20px auto;
+            width: 100%;
+            max-width: 500px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .section-title {
+            margin-top: 35px;
+            margin-bottom: 10px;
+            font-size: 24px;
+        }
+
+        .mood-text {
+            color: #1DB954;
+            font-weight: bold;
+        }
+
+        .led-preview {
+            width: 140px;
+            height: 70px;
+            border-radius: 14px;
+            background: orange;
+            margin: 15px auto 0 auto;
+            box-shadow: 0 0 20px rgba(255, 165, 0, 0.4);
+        }
+
+        .result-card {
+            background-color: #181818;
+            border-radius: 16px;
+            padding: 16px;
+            margin: 16px auto;
+            width: 100%;
+            max-width: 500px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
+        }
+
+        .song-info {
+            text-align: left;
+            flex: 1;
+        }
+
+        .song-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 6px;
+        }
+
+        .artist-name {
+            color: #b3b3b3;
+            font-size: 14px;
+        }
+
+        .album-placeholder {
+            width: 60px;
+            height: 60px;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #1DB954, #0f6b31);
+            flex-shrink: 0;
+        }
+
+        .empty-state {
+            color: #b3b3b3;
+            margin-top: 20px;
         }
     </style>
 </head>
 <body>
+    <div class="container">
+        <h1>Spotify Mood Light</h1>
+        <p class="subtitle">Enter a song and artist to let the system classify its mood automatically.</p>
 
-    <h1>Spotify Mood Light</h1>
+        <form method="POST">
+            <input
+                type="text"
+                name="song"
+                placeholder="Enter song name"
+                value="{{ song }}"
+            />
 
-    <form method="POST">
-        <input type="text" name="query" placeholder="Enter a song" />
+            <input
+                type="text"
+                name="artist"
+                placeholder="Enter artist name"
+                value="{{ artist }}"
+            />
 
-        <select name="mode">
-            <option value="mood">Mood</option>
-            <option value="party">Party</option>
-            <option value="chill">Chill</option>
-        </select>
+            <br>
+            <button type="submit">Search</button>
+        </form>
 
-        <br>
+        <div class="card">
+            <h2>Current Selection</h2>
+            <p><strong>Song:</strong> {{ song if song else "None yet" }}</p>
+            <p><strong>Artist:</strong> {{ artist if artist else "None yet" }}</p>
+            <p>
+                <strong>Mood:</strong>
+                <span class="mood-text">
+                    {{ mood if mood else "Waiting for classification" }}
+                </span>
+            </p>
 
-        <button type="submit">Search</button>
-    </form>
+            <div class="led-preview"></div>
+        </div>
 
-    <div class="box">
-        <h2>Current Selection</h2>
-        <p><b>Song:</b> {{ query }}</p>
-        <p><b>Mode:</b> {{ mode }}</p>
+        {% if results %}
+            <h2 class="section-title">Search Results</h2>
 
-         <!-- LED preview box -->
-        <div style="
-            width:120px;
-            height:60px;
-            border-radius:10px;
-            background:orange;
-            margin:auto;
-            margin-top:10px;
-        "></div>
+            {% for song_result in results %}
+                <div class="result-card">
+                    <div class="album-placeholder"></div>
+
+                    <div class="song-info">
+                        <div class="song-title">{{ song_result.name }}</div>
+                        <div class="artist-name">{{ song_result.artist }}</div>
+                    </div>
+
+                    <button>Select</button>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p class="empty-state">No results yet. Search for a song to get started.</p>
+        {% endif %}
     </div>
 
+    <footer style="
+        margin-top: 40px;
+        padding: 20px;
+        color: #b3b3b3;
+        font-size: 14px;
+    ">
+        Built by Alicia Grechu & Emma Howard
+    </footer>
 </body>
 </html>
