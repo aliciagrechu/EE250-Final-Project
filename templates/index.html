@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Spotify LED Controller</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+            margin-top: 50px;
+        }
+
+        input, select, button {
+            padding: 10px;
+            margin: 10px;
+            border-radius: 8px;
+        }
+
+        .box {
+            margin-top: 20px;
+            padding: 20px;
+            border: 1px solid gray;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Spotify Mood Light</h1>
+
+    <form method="POST">
+        <input type="text" name="query" placeholder="Enter a song" />
+
+        <select name="mode">
+            <option value="mood">Mood</option>
+            <option value="party">Party</option>
+            <option value="chill">Chill</option>
+        </select>
+
+        <br>
+
+        <button type="submit">Search</button>
+    </form>
+
+    <div class="box">
+        <h2>Current Selection</h2>
+        <p><b>Song:</b> {{ query }}</p>
+        <p><b>Mode:</b> {{ mode }}</p>
+
+         <!-- LED preview box -->
+        <div style="
+            width:120px;
+            height:60px;
+            border-radius:10px;
+            background:orange;
+            margin:auto;
+            margin-top:10px;
+        "></div>
+    </div>
+
+</body>
+</html>
