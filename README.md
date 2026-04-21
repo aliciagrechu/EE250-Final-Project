@@ -39,5 +39,24 @@ In mqtt_publisher.py and replace RPI_IP with your RPi's IP address
 
 To Run Project:
 
+1. ssh into RPi. Then run led_controller.py that you added to RPi.
+- python led_controller.py
 
+2. Start Flask server on laptop
+- python app.py
+
+3. Open  http://127.0.0.1:5000 in browser. Make sure Spotify is open on your phone or desktop before selecting a song. Search for a song, select it from the result, and the system will classify it, change the LED, and start playback on Spotify device.
+
+Testing:
+
+We had seperate test in certain files to check their correct operation.
+
+To test tone_classifier.py, we ran 8 labeled songs through classifer and had it print predicted vs expected tone for each, along with the final accuracy score.
+- python tone_classifier.py
+
+To test audio download and feature extraction, we had the test download three songs from Youtube and extract audio features. 
+- python audio_features.py
+
+To test MQTT publishing, we ran a test that sent all four tones to RPi. 
+- python mqtt_publisher.py
 
