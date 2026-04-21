@@ -2,26 +2,30 @@
 #used ChatGPT to understand how to use RGBLED to handle PWM signals that can change colors
 
 import paho.mqtt.client as mqtt
-from gpiozero import RGBLED
+from gpiozero import LED
 
-# pin numbers 
-RED_PIN   = 17
-GREEN_PIN = 27
-BLUE_PIN  = 22
+# Pin numbers — wire your red, yellow, and blue LEDs to these GPIO pins
+RED_PIN    = 17
+YELLOW_PIN = 27
+BLUE_PIN   = 22
 
+# Create three separate LED objects
+led_red    = LED(RED_PIN)
+led_yellow = LED(YELLOW_PIN)
+led_blue   = LED(BLUE_PIN)
 
-#create RGB LED object, gpiozero handles PWM signals, colors set as tuples
-led = RGBLED(red=RED_PIN, green=GREEN_PIN, blue=BLUE_PIN)
-
-
-TONE_COLORS = {
-    "chill": (0/255,   180/255, 200/255),   # teal
-    "warm":  (255/255, 160/255,  40/255),   # yellow orange
-    "dark":  (80/255,    0/255, 160/255),   # deep purple
-    "dance": (220/255,  50/255,  50/255),   # ligher red
+# Maps each tone to which LEDs should be on (red, yellow, blue)
+TONE_LEDS = {
+    "chill": (False, False, True),   # blue only
+    "warm":  (False, True,  False),  # yellow only
+    "dark":  (True,  False, False),  # red only
+    "dance": (True,  True,  True),   # all three
 }
 
-
+def set_leds(red, yellow, blue):
+    led_red.on()    if red    else led_red.off()
+    led_yellow.on() if yellow else led_yellow.off()
+    led_blue.on()   if blue   else led_blue.off()
 
 #when client receives connection from broker, subscribe to topic
 def on_connect(client, userdata, flags, rc):
@@ -45,13 +49,12 @@ def on_message_from_tone(client, userdata, message):
     tone = message.payload.decode().strip().lower()
     print("Tone received: " + tone)
 
-    if tone in TONE_COLORS:
-        # set the LED to the RGB color mapped to this tone
-        led.color = TONE_COLORS[tone]
-        print("LED set to " + tone.upper())
+    if tone in TONE_LEDS:
+        r, y, b = TONE_LEDS[tone]
+        set_leds(r, y, b)
+        print("LED set for " + tone)
     else:
-        print("Unknown tone: " + tone + " — LED unchanged")
-
+        print("Unknown tone: " + tone)
 
 if __name__ == '__main__':
 

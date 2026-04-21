@@ -1,4 +1,3 @@
-<<<<<<< Updated upstream
 #spotify_client.py: uses spotify to search for songs because it returns clean data that yt-dlp can use to find right youtube video, also uses playback so song will start playing on Spotify
 #used Claude to understand how to use Spotify API and .env file to pass login information, and how to format tracks for yt - dlp 
 
@@ -79,62 +78,3 @@ def play_song(track_id: str):
         uris=[f"spotify:track:{track_id}"]  # Spotify URI format for a track
     )
     print(f"[spotify] Playing track {track_id} on device: {active['name']}")
-=======
-import os
-
-from dotenv import load_dotenv  # loads variables from the .env file (client ID and client secret) into Python
-import spotipy  # Spotify API wrapper for Python
-from spotipy.oauth2 import SpotifyOAuth  # handles Spotify login (OAuth) so user doesn't have to log in more than once 
-
-
-load_dotenv()  # actually loads the .env file so we can use its values
-
-
-def get_spotify_client():
-    # get credentials from the .env file
-    client_id = os.getenv("SPOTIPY_CLIENT_ID")
-    client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
-    redirect_uri = os.getenv("SPOTIPY_REDIRECT_URI")
-
-    # if any credential is missing, stop and show an error
-    if not client_id or not client_secret or not redirect_uri:
-        raise RuntimeError("Missing Spotify environment variables in .env")
-
-    # create and return a Spotify client object
-    return spotipy.Spotify(
-        auth_manager=SpotifyOAuth(
-            client_id=client_id,          # your app's client ID
-            client_secret=client_secret,  # your app's client secret
-            redirect_uri=redirect_uri,    # where Spotify sends you after login
-            scope="",                     # no special permissions needed for search
-            open_browser=True,            # opens browser for login if needed
-            cache_path=".spotify_cache"   # saves login token so you don't log in every time
-        )
-    )
-
-
-def search_song(query, limit=5):
-    # create a Spotify client (logs in if needed)
-    sp = get_spotify_client()
-
-    # send a search request to Spotify API
-    results = sp.search(q=query, type="track", limit=limit)
-
-    # create an empty list to store simplified track data
-    tracks = []
-
-    # loop through each track returned by Spotify
-    for track in results.get("tracks", {}).get("items", []):
-        # extract only the fields we care about and store them in a dictionary
-        tracks.append({
-            "id": track["id"],  # unique Spotify track ID
-            "name": track["name"],  # song title
-            "artist": ", ".join(artist["name"] for artist in track["artists"]),  # combine all artists into one string
-            "album": track["album"]["name"],  # album name
-            "popularity": track.get("popularity", 0),  # popularity score (0–100)
-            "duration_ms": track.get("duration_ms", 0),  # song length in milliseconds
-        })
-
-    # return the cleaned list of track dictionaries
-    return tracks
->>>>>>> Stashed changes
