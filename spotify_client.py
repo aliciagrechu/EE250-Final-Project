@@ -11,7 +11,7 @@ from spotipy.oauth2 import SpotifyOAuth
 # Reads SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, and SPOTIPY_REDIRECT_URI from .env so os.getenv() can find them
 load_dotenv()
 
-#builds authenticated spotify cleint, SpotifyOAuth handles login on first run, then caches token so subsequent runs don't require login
+#builds authenticated spotify client, SpotifyOAuth handles login on first run, then caches token so subsequent runs don't require login
 def get_spotify_client():
     client_id     = os.getenv("SPOTIPY_CLIENT_ID")
     client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
@@ -43,9 +43,12 @@ def search_song(query, limit=5):
     sp = get_spotify_client()
     results = sp.search(q=query, type="track", limit=limit)
 
-
     tracks = []
     for track in results.get("tracks", {}).get("items", []):
+        # Album images come back as a list sorted largest → smallest; take the first (largest)
+        images = track["album"].get("images", [])
+        image_url = images[0]["url"] if images else None
+
         tracks.append({
             "id":          track["id"],
             "name":        track["name"],
@@ -54,6 +57,7 @@ def search_song(query, limit=5):
             "album":       track["album"]["name"],
             "popularity":  track.get("popularity", 0),   # 0–100 score
             "duration_ms": track.get("duration_ms", 0),
+            "image":       image_url,                    # album art URL for frontend
         })
 
     return tracks
