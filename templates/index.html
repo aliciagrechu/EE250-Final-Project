@@ -80,6 +80,12 @@
             transform: scale(0.98);
         }
 
+        button:disabled {
+            background-color: #535353;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .card {
             background-color: #181818;
             border-radius: 16px;
@@ -106,7 +112,7 @@
             height: 70px;
             border-radius: 14px;
             margin: 15px auto 0 auto;
-            transition: background 0.25s ease, box-shadow 0.25s ease;
+            transition: background 0.5s ease, box-shadow 0.5s ease;
             animation: ledPulse 2s infinite ease-in-out;
         }
 
@@ -114,10 +120,6 @@
             0%   { transform: scale(1); }
             50%  { transform: scale(1.04); }
             100% { transform: scale(1); }
-        }
-
-        .result-form {
-            margin: 0;
         }
 
         .result-card {
@@ -174,6 +176,7 @@
             background: linear-gradient(135deg, #1DB954, #0f6b31);
             flex-shrink: 0;
         }
+
         .album-art {
             width: 60px;
             height: 60px;
@@ -195,148 +198,243 @@
             border-top: 1px solid #282828;
         }
 
-        .selected-badge {
-            display: inline-block;
-            margin-top: 8px;
-            padding: 6px 10px;
-            border-radius: 999px;
-            background-color: #1DB954;
+        .result-button {
+            min-width: 90px;
+        }
+
+        /* Error banner */
+        .error-banner {
+            background-color: #3b1a1a;
+            border: 1px solid #e53e3e;
+            color: #fc8181;
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin: 16px auto;
+            max-width: 500px;
+            text-align: left;
+            font-size: 14px;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        /* Loading overlay */
+        #loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 999;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 20px;
+        }
+
+        #loading-overlay.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 52px;
+            height: 52px;
+            border: 5px solid #282828;
+            border-top-color: #1DB954;
+            border-radius: 50%;
+            animation: spin 0.85s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .loading-text {
             color: white;
-            font-size: 12px;
+            font-size: 18px;
             font-weight: bold;
         }
 
-        .result-button {
-            min-width: 90px;
+        .loading-sub {
+            color: #b3b3b3;
+            font-size: 13px;
+        }
+
+        /* Score breakdown table */
+        .score-table {
+            margin: 10px auto 0 auto;
+            font-size: 13px;
+            color: #b3b3b3;
+            border-collapse: collapse;
+        }
+
+        .score-table td {
+            padding: 3px 10px;
+            text-align: left;
+        }
+
+        .score-table .score-label {
+            text-transform: capitalize;
+            font-weight: bold;
+            color: white;
+        }
+
+        .score-bar-cell {
+            width: 120px;
+        }
+
+        .score-bar-bg {
+            background: #282828;
+            border-radius: 4px;
+            height: 8px;
+            width: 100%;
+        }
+
+        .score-bar-fill {
+            height: 8px;
+            border-radius: 4px;
+            background: #1DB954;
+            transition: width 0.4s ease;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Welcome to SpotiPI</h1>
-        <p class="subtitle"> SpotiPI syncs music with smart lighting using real-time Spotify data. </p>
-        <p class="subtitle"> Enter a song and artist to let the system classify its mood automatically. </p>
 
-        <form method="POST" class="search-form">
-            <input type="hidden" name="action" value="search">
+<!-- Loading overlay — shown while backend processes audio -->
+<div id="loading-overlay">
+    <div class="spinner"></div>
+    <div class="loading-text">Analyzing song…</div>
+    <div class="loading-sub">Downloading audio and classifying mood. This may take 15–30 seconds.</div>
+</div>
 
-            <div class="label-row">Song Name</div>
-            <input
-                type="text"
-                name="song"
-                placeholder="Enter song name"
-                value="{{ search_song }}"
-            />
+<div class="container">
+    <h1>Welcome to SpotiPI</h1>
+    <p class="subtitle">SpotiPI syncs music with smart lighting using real-time Spotify data.</p>
+    <p class="subtitle">Enter a song and artist to let the system classify its mood automatically.</p>
 
-            <div class="label-row">Artist Name</div>
-            <input
-                type="text"
-                name="artist"
-                placeholder="Enter artist name"
-                value="{{ search_artist }}"
-            />
+    <!-- Search form -->
+    <form method="POST" class="search-form">
+        <input type="hidden" name="action" value="search">
+        <div class="label-row">Song Name</div>
+        <input type="text" name="song" placeholder="Enter song name" value="{{ search_song }}" />
+        <div class="label-row">Artist Name</div>
+        <input type="text" name="artist" placeholder="Enter artist name" value="{{ search_artist }}" />
+        <br>
+        <button type="submit">Search</button>
+    </form>
 
-            <br>
-            <button type="submit">Search</button>
-        </form>
+    <!-- Error banner -->
+    {% if error %}
+        <div class="error-banner">⚠ {{ error }}</div>
+    {% endif %}
 
-        <div class="card">
-            <h2>Current Selection</h2>
-                <p><strong>Song:</strong> <span id="current-song">{{ selected_song if selected_song else "None yet" }}</span></p>
-                <p><strong>Artist:</strong> <span id="current-artist">{{ selected_artist if selected_artist else "None yet" }}</span></p>
+    <!-- Current selection card -->
+    <div class="card">
+        <h2>Current Selection</h2>
+        <p><strong>Song:</strong> {{ selected_song if selected_song else "None yet" }}</p>
+        <p><strong>Artist:</strong> {{ selected_artist if selected_artist else "None yet" }}</p>
+        <p>
+            <strong>Mood:</strong>
+            <span class="mood-text">
+                {{ mood if mood else "Waiting for classification" }}
+            </span>
+        </p>
 
-                <p><strong>Mood:</strong>
-                    <span id="current-mood" class="mood-text">
-                        {{ mood if mood else "Waiting for classification" }}
-                    </span>
-                </p>
-
-                <div id="led-box" class="led-preview"></div>
+        <!-- LED preview: lit up if we have a color result -->
+        <div class="led-preview"
+             style="
+                background: {{ color }};
+                box-shadow: {% if mood %}0 0 30px {{ color }}{% else %}none{% endif %};
+             ">
         </div>
 
-        {% if results %}
-            <h2 class="section-title">Search Results</h2>
-
-            {% for song_result in results %}
-                <div id="card-{{ song_result.id }}" class="result-card">
-
-                    <!-- album image placeholder ready for real images -->
-                    {% if song_result.image %}
-                        <img src="{{ song_result.image }}" alt="Album Art" class="album-art">
-                    {% else %}
-                        <div class="album-placeholder"></div>
-                    {% endif %}
-
-                    <div class="song-info">
-                        <div class="song-title">{{ song_result.name }}</div>
-                        <div class="artist-name">{{ song_result.artist }}</div>
-                    </div>
-
-                <!-- Select Button in Song List -->
-                <button type="button"
-                    onclick="selectSong('{{ song_result.name }}', '{{ song_result.artist }}', '{{ song_result.id }}')">
-                    <span id="btn-{{ song_result.id }}">Select</span>
-                </button>
-
-                </div>
-            {% endfor %}
-        {% else %}
-            <p class="empty-state">No results yet. Search for a song to get started.</p>
+        <!-- Score breakdown — only shown after classification -->
+        {% if scores %}
+            {% set max_score = scores.values() | max %}
+            <table class="score-table">
+                {% for tone_name, score in scores.items() %}
+                <tr>
+                    <td class="score-label">{{ tone_name }}</td>
+                    <td>{{ score }}</td>
+                    <td class="score-bar-cell">
+                        <div class="score-bar-bg">
+                            <div class="score-bar-fill"
+                                 style="width: {% if max_score > 0 %}{{ (score / max_score * 100) | int }}{% else %}0{% endif %}%">
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
         {% endif %}
     </div>
 
-    <footer>
-        Built by Alicia Grechu & Emma Howard
-    </footer>
+    <!-- Search results -->
+    {% if results %}
+        <h2 class="section-title">Search Results</h2>
 
-    <!-- JavaScript for song list select button -->
-    <script>
-    function selectSong(name, artist, id) {
-        // Update current selection text
-        document.getElementById("current-song").innerText = name;
-        document.getElementById("current-artist").innerText = artist;
+        <!-- Hidden form that POSTs the selected song for backend processing -->
+        <form method="POST" id="select-form">
+            <input type="hidden" name="action" value="select">
+            <input type="hidden" name="selected_id"     id="f-selected-id">
+            <input type="hidden" name="selected_song"   id="f-selected-song">
+            <input type="hidden" name="selected_artist" id="f-selected-artist">
+            <!-- Persist search box values so they survive the POST round-trip -->
+            <input type="hidden" name="song"   value="{{ search_song }}">
+            <input type="hidden" name="artist" value="{{ search_artist }}">
+            <!-- Pass results back so they stay visible after selection -->
+            <input type="hidden" name="results_json" value="{{ results | tojson | e }}">
+        </form>
 
-        // Fake mood logic (frontend version for now)
-        let mood = "Chill";
-        let color = "#8b5cf6";
+        {% for song_result in results %}
+            <div id="card-{{ song_result.id }}"
+                 class="result-card {% if song_result.id == selected_id %}selected{% endif %}">
 
-        const lower = name.toLowerCase();
+                {% if song_result.image %}
+                    <img src="{{ song_result.image }}" alt="Album Art" class="album-art">
+                {% else %}
+                    <div class="album-placeholder"></div>
+                {% endif %}
 
-        if (lower.includes("remix") || lower.includes("dance")) {
-            mood = "Energetic";
-            color = "#ff4fa3";
-        } else if (lower.includes("love") || lower.includes("happy")) {
-            mood = "Happy";
-            color = "#f59e0b";
-        } else if (lower.includes("night") || lower.includes("blue")) {
-            mood = "Moody";
-            color = "#3b82f6";
-        }
+                <div class="song-info">
+                    <div class="song-title">{{ song_result.name }}</div>
+                    <div class="artist-name">{{ song_result.artist }}</div>
+                </div>
 
-        document.getElementById("current-mood").innerText = mood;
+                <button type="button"
+                        class="result-button"
+                        id="btn-{{ song_result.id }}"
+                        onclick="selectSong('{{ song_result.name | e }}', '{{ song_result.artist | e }}', '{{ song_result.id }}')">
+                    {% if song_result.id == selected_id %}Selected{% else %}Select{% endif %}
+                </button>
+            </div>
+        {% endfor %}
 
-        // Update LED color
-        const led = document.getElementById("led-box");
-        led.style.background = color;
-        led.style.boxShadow = `0 0 25px ${color}`;
+    {% else %}
+        <p class="empty-state">No results yet. Search for a song to get started.</p>
+    {% endif %}
+</div>
 
-        // Remove previous selection highlight
-        document.querySelectorAll(".result-card").forEach(card => {
-            card.classList.remove("selected");
-        });
+<footer>
+    Built by Alicia Grechu &amp; Emma Howard
+</footer>
 
-        // Highlight selected card
-        document.getElementById("card-" + id).classList.add("selected");
+<script>
+function selectSong(name, artist, id) {
+    // Fill hidden form fields
+    document.getElementById("f-selected-id").value     = id;
+    document.getElementById("f-selected-song").value   = name;
+    document.getElementById("f-selected-artist").value = artist;
 
-        // reset button text
-        document.querySelectorAll("[id^='btn-']").forEach(btn => {
-            btn.innerText = "Select";
-        });
+    // Show loading overlay before submitting — backend will take a while
+    document.getElementById("loading-overlay").classList.add("active");
 
-        // update clicked button
-        document.getElementById("btn-" + id).innerText = "Selected";
-    }
-    </script>
+    // Disable all select buttons so user can't double-submit
+    document.querySelectorAll(".result-button").forEach(btn => {
+        btn.disabled = true;
+    });
+
+    document.getElementById("select-form").submit();
+}
+</script>
 
 </body>
 </html>
