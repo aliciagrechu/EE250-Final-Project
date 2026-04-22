@@ -82,3 +82,28 @@ def play_song(track_id: str):
         uris=[f"spotify:track:{track_id}"]  # Spotify URI format for a track
     )
     print(f"[spotify] Playing track {track_id} on device: {active['name']}")
+
+def get_spotify_client():
+    client_id     = os.getenv("SPOTIPY_CLIENT_ID")
+    client_secret = os.getenv("SPOTIPY_CLIENT_SECRET")
+    redirect_uri  = os.getenv("SPOTIPY_REDIRECT_URI")
+
+    if not client_id or not client_secret or not redirect_uri:
+        raise RuntimeError(
+            "Missing Spotify credentials in .env — "
+            "make sure SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, "
+            "and SPOTIPY_REDIRECT_URI are all set."
+        )
+
+    cache_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".spotify_cache")
+
+    return spotipy.Spotify(
+        auth_manager=SpotifyOAuth(
+            client_id=client_id,
+            client_secret=client_secret,
+            redirect_uri=redirect_uri,
+            scope="user-read-playback-state user-modify-playback-state",
+            open_browser=False,
+            cache_path=cache_path
+        )
+    )

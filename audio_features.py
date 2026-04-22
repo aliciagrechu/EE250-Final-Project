@@ -35,14 +35,14 @@ def download_song(track_name: str, artist: str) -> str:
     print(f"[download] Searching YouTube for: {track_name} – {artist}")
 
     cmd = [
-        "yt-dlp",
+        "py", "-m", "yt_dlp",
         "--extract-audio", #strip video stream, keep audio only
         "--audio-format", AUDIO_FORMAT, #convert to mp3 regardless of source format
         "--audio-quality", "0", # 0 is best available quality
         "--output", output_template,
         "--no-playlist", #if returns playlist, take only first item
         "--quiet", #suppress progress bars
-        "--js-runtimes", "nodejs", #JS engine used to parse Youtube pages
+        "--js-runtimes", "node", #JS engine used to parse Youtube pages
         query
     ]
 

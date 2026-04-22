@@ -112,6 +112,25 @@ def index():
         error=error,
     )
 
+from spotipy.oauth2 import SpotifyOAuth
+
+# Add a /callback route so Spotipy can complete the OAuth flow
+@app.route("/callback")
+def callback():
+    code = request.args.get("code")
+    auth_manager = SpotifyOAuth(
+        client_id=os.getenv("SPOTIPY_CLIENT_ID"),
+        client_secret=os.getenv("SPOTIPY_CLIENT_SECRET"),
+        redirect_uri=os.getenv("SPOTIPY_REDIRECT_URI"),
+        scope="user-read-playback-state user-modify-playback-state",
+        cache_path=os.path.join(os.path.dirname(os.path.abspath(__file__)), ".spotify_cache")
+    )
+    auth_manager.get_access_token(code)
+    return redirect("/")
+
+from flask import redirect
+import os
+
 
 if __name__ == "__main__":
     app.run(debug=True)
