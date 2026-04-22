@@ -34,6 +34,11 @@ def index():
         search_artist   = request.form.get("artist", "").strip()
 
         if action == "search":
+            # DEBUGGING
+            print("SEARCH ACTION HIT")
+            print("song:", search_song_val)
+            print("artist:", search_artist)
+
             if search_song_val or search_artist:
                 query = f"{search_song_val} {search_artist}".strip()
                 try:
